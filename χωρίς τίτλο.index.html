@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <title>FiveStar Renovation PRO - Υπολογιστής Γυψοσανίδας</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: 'Roboto', sans-serif; margin: 0; background: #f9f9f9; color: #333; transition: 0.3s; }
+    body.dark { background: #111; color: #eee; }
+    header, footer { background: #111; color: #fff; text-align: center; padding: 20px; position: relative; }
+    header img { height: 60px; }
+    main { max-width: 1200px; margin: auto; padding: 20px; }
+    button, input, select { width: 100%; padding: 10px; margin: 5px 0; border-radius: 4px; border: 1px solid #ccc; }
+    button { background: #d4af37; color: #111; border: none; cursor: pointer; }
+    button:hover { background: #bfa334; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+    .actions button { flex: 1 1 calc(33% - 10px); }
+    .section { background: #fff; border: 1px solid #ccc; padding: 20px; border-radius: 4px; margin-bottom: 15px; }
+    body.dark .section { background: #222; border-color: #444; }
+    .darkModeToggle { position: absolute; top: 20px; right: 20px; background: transparent; border: none; font-size: 24px; cursor: pointer; color: #d4af37; }
+    #results { background: #eee; padding: 10px; border-radius: 4px; white-space: pre-wrap; }
+    body.dark #results { background: #333; color: #fff; }
+    canvas { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="icons/icon-192.png" alt="FiveStar Logo">
+    <h1>FiveStar Renovation PRO</h1>
+    <button class="darkModeToggle" onclick="toggleDarkMode()">🌙</button>
+  </header>
+  <main>
+    <h2 id="title">Υπολογιστής Υλικών Γυψοσανίδας</h2>
+
+    <div class="section">
+      <label>Γλώσσα / Language:
+        <select onchange="changeLanguage(this.value)">
+          <option value="el" selected>Ελληνικά</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="section">
+      <label id="labelClientName">Όνομα Πελάτη:
+        <input type="text" id="clientName" placeholder="π.χ. Κωνσταντίνος Παπαδόπουλος">
+      </label>
+      <button onclick="saveClientData()" id="saveClientButton">Αποθήκευση Πελάτη</button>
+    </div>
+
+    <div class="section">
+      <h3 id="labelAddRoom">Προσθήκη Τοίχου / Χώρου</h3>
+      <label id="labelRoomName">Όνομα Χώρου:
+        <input type="text" id="roomName" placeholder="π.χ. Σαλόνι">
+      </label>
+      <label id="labelConstructionType">Τύπος Κατασκευής:
+        <select id="constructionType">
+          <option value="wall">Τοίχος</option>
+          <option value="ceiling">Οροφή</option>
+        </select>
+      </label>
+      <label id="labelHeight">Ύψος (m):
+        <input type="number" id="heightInput" step="0.01" min="0">
+      </label>
+      <label id="labelLength">Μήκος (m):
+        <input type="number" id="lengthInput" step="0.01" min="0">
+      </label>
+      <label id="labelDoors">Πόρτες (m²):
+        <input type="number" id="doorsArea" step="0.01" min="0" value="0">
+      </label>
+      <label id="labelWindows">Παράθυρα (m²):
+        <input type="number" id="windowsArea" step="0.01" min="0" value="0">
+      </label>
+      <button onclick="addRoom()" id="addRoomButton">Προσθήκη Χώρου</button>
+      <div id="roomsList"></div>
+    </div>
+
+    <div class="section">
+      <h3 id="labelMaterialSettings">Ρυθμίσεις Υλικών</h3>
+      <label id="labelBoardLength">Μήκος Φύλλων / Προφίλ:
+        <select id="boardLength">
+          <option value="2.7">2.7 m</option>
+          <option value="3" selected>3 m</option>
+          <option value="3.6">3.6 m</option>
+        </select>
+      </label>
+      <label id="labelStudSpacing">Απόσταση Ορθοστατών:
+        <select id="studSpacing">
+          <option value="0.4">40 cm</option>
+          <option value="0.6" selected>60 cm</option>
+        </select>
+      </label>
+      <label id="labelStructureType">Τύπος Σκελετού:
+        <select id="structureType">
+          <option value="single" selected>Μονός</option>
+          <option value="double">Διπλός</option>
+          <option value="heavy">Βαρύς</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="section">
+      <h3 id="labelPrices">Τιμές Υλικών (€)</h3>
+      <label>Γυψοσανίδα (€ / τεμ): <input type="number" id="gypsumPrice" value="3.5"></label>
+      <label>Προφίλ C (€ / m): <input type="number" id="cPrice" value="2.8"></label>
+      <label>Προφίλ U (€ / m): <input type="number" id="uPrice" value="2"></label>
+      <label>Γωνιόκρανα (€ / m): <input type="number" id="cornerPrice" value="1.5"></label>
+      <label>Μονωτικό (€ / m²): <input type="number" id="insulationPrice" value="5"></label>
+      <label>Βίδες (€ / 1000 τεμ): <input type="number" id="screwsBoxPrice" value="15"></label>
+      <label>Ταινία (€ / ρολό 90m): <input type="number" id="tapePrice" value="4"></label>
+      <label>Στόκος (€ / σακί 28kg): <input type="number" id="puttyPrice" value="8"></label>
+      <label>Αναρτήσεις (€ / τεμ): <input type="number" id="hangerPrice" value="3"></label>
+    </div>
+
+    <div class="section">
+      <h3 id="labelWaste">Φύρα (%)</h3>
+      <label>Γυψοσανίδα: <input type="number" id="gypsumWaste" value="5"></label>
+      <label>Προφίλ C: <input type="number" id="cWaste" value="5"></label>
+      <label>Προφίλ U: <input type="number" id="uWaste" value="5"></label>
+      <label>Γωνιόκρανα: <input type="number" id="cornerWaste" value="5"></label>
+      <label>Μονωτικό: <input type="number" id="insulationWaste" value="5"></label>
+    </div>
+
+    <div class="section">
+      <h3 id="labelEconomics">Οικονομικά</h3>
+      <label>ΦΠΑ (%): <input type="number" id="vatRate" value="24"></label>
+      <label>Κέρδος (%): <input type="number" id="profitMargin" value="10"></label>
+      <label>Εργατικά (€ / m²): <input type="number" id="labourCost" value="15"></label>
+    </div>
+
+    <div class="actions">
+      <button onclick="calculate()" id="calculateButton">Υπολογισμός</button>
+      <button onclick="exportTxt()">TXT</button>
+      <button onclick="exportCsv()">CSV</button>
+      <button onclick="exportPdf()">PDF</button>
+      <button onclick="printResults()">Εκτύπωση</button>
+      <button onclick="clearAll()">Καθαρισμός</button>
+    </div>
+
+    <div id="results"></div>
+    <canvas id="costChart" height="100"></canvas>
+  </main>
+
+  <footer>
+    FiveStar Renovation PRO © 2025<br>
+    <a href="mailto:info@fivestar.com" style="color:#d4af37;">Επικοινωνία</a>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="scripts.js"></script>
+  <script src="language.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
+</body>
+</html>
